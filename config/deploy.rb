@@ -10,7 +10,7 @@ set :use_sudo, false
 
 set :scm, "git"
 set :repository, "git@github.com:bryanus/#{application}.git" # Your clone URL
-set :branch, "master"
+set :branch, "rds"
 
 default_run_options[:pty] = true
 ssh_options[:forward_agent] = true

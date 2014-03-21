@@ -40,7 +40,7 @@ gem 'unicorn'
 
 
 group :development do
-  gem 'sqlite3'
+  # gem 'sqlite3'
   gem 'capistrano', "~> 2.15.5"
 end
 
