@@ -8,7 +8,14 @@ set :repo_url, 'git@github.com:bryanus/bryanus/cap2r3.git'
 # setup rvm.
 set :rbenv_type, :system
 set :rbenv_ruby, '2.1.1' #must match ruby version of server environment
+
+#I had to set rbenv_path manually or would never find the ruby verison path on server. why?
+set :rbenv_path, '/home/deployer/.rbenv'
 set :rbenv_prefix, "RBENV_ROOT=#{fetch(:rbenv_path)} RBENV_VERSION=#{fetch(:rbenv_ruby)} #{fetch(:rbenv_path)}/bin/rbenv exec"
+
+set :pty, true
+set :ssh_options, { forward_agent: true }
+
 set :rbenv_map_bins, %w{rake gem bundle ruby rails}
 
 # how many old releases do we want to keep
@@ -58,11 +65,13 @@ set(:symlinks, [
   {
     source: "log_rotation",
    link: "/etc/logrotate.d/#{fetch(:full_app_name)}"
-  },
-  {
-    source: "monit",
-    link: "/etc/monit/conf.d/#{fetch(:full_app_name)}.conf"
   }
+  #remove monit for now
+  # },
+  # {
+  #   source: "monit",
+  #   link: "/etc/monit/conf.d/#{fetch(:full_app_name)}.conf"
+  # }
 ])
 
 
