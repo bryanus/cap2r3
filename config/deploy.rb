@@ -1,75 +1,82 @@
-require "bundler/capistrano"
+set :application, 'cap2r3'
+set :deploy_user, 'deployer'
 
-server "ec2deploy", :web, :app, :db, primary: true
+# setup repo details
+set :scm, :git
+set :repo_url, 'git@github.com:bryanus/bryanus/cap2r3.git'
 
-set :application, "cap2r3"
-set :user, "deployer" # The server's user for deploys
-set :deploy_to, "/home/#{user}/apps/#{application}"
-set :deploy_via, :remote_cache
-set :use_sudo, false
+# setup rvm.
+set :rbenv_type, :system
+set :rbenv_ruby, '2.1.1' #must match ruby version of server environment
+set :rbenv_prefix, "RBENV_ROOT=#{fetch(:rbenv_path)} RBENV_VERSION=#{fetch(:rbenv_ruby)} #{fetch(:rbenv_path)}/bin/rbenv exec"
+set :rbenv_map_bins, %w{rake gem bundle ruby rails}
 
-set :scm, "git"
-set :repository, "git@github.com:bryanus/#{application}.git" # Your clone URL
-set :branch, "master"
+# how many old releases do we want to keep
+set :keep_releases, 5
 
-default_run_options[:pty] = true
-ssh_options[:forward_agent] = true
+# files we want symlinking to specific entries in shared.
+set :linked_files, %w{config/database.yml config/application.yml}
 
-task :ask_production_confirmation do
-  set(:confirmed) do
-    puts <<-WARN
- 
-    ========================================================================
- 
-      WARNING!! You're about to deploy to PRODUCTION server(s)!!
-      Please confirm you know what you are doing.
- ========================================================================
- 
-    WARN
-    answer = Capistrano::CLI.ui.ask "  Are you sure you want to continue? (Y) "
-    if answer == 'Y' then true else false end
-  end
- 
-  unless fetch(:confirmed)
-    puts "\nDeploy cancelled!"
-    exit
-  end
-end
- 
-before 'deploy', :ask_production_confirmation
+# dirs we want symlinking to shared
+set :linked_dirs, %w{bin log tmp/pids tmp/cache tmp/sockets vendor/bundle public/system}
+
+# what specs should be run before deployment is allowed to
+# continue, see lib/capistrano/tasks/run_tests.cap
+set :tests, ["spec"]
+
+# which config files should be copied by deploy:setup_config
+# see documentation in lib/capistrano/tasks/setup_config.cap
+# for details of operations
+set(:config_files, %w(
+  nginx.conf
+  application.yml
+  database.example.yml
+  log_rotation
+  monit
+  unicorn.rb
+  unicorn_init.sh
+))
+
+# which config files should be made executable after copying
+# by deploy:setup_config
+set(:executable_config_files, %w(
+  unicorn_init.sh
+))
+
+# files which need to be symlinked to other parts of the
+# filesystem. For example nginx virtualhosts, log rotation
+# init scripts etc.
+set(:symlinks, [
+  {
+    source: "nginx.conf",
+    link: "/etc/nginx/sites-enabled/#{fetch(:full_app_name)}"
+  },
+  {
+    source: "unicorn_init.sh",
+    link: "/etc/init.d/unicorn_#{fetch(:full_app_name)}"
+  },
+  {
+    source: "log_rotation",
+   link: "/etc/logrotate.d/#{fetch(:full_app_name)}"
+  },
+  {
+    source: "monit",
+    link: "/etc/monit/conf.d/#{fetch(:full_app_name)}.conf"
+  }
+])
 
 
-after "deploy", "deploy:cleanup" # keep only the last 5 releases
+# this:
+# http://www.capistranorb.com/documentation/getting-started/flow/
+# is worth reading for a quick overview of what tasks are called
+# and when for `cap stage deploy`
 
 namespace :deploy do
-  %w[start stop restart].each do |command|
-    desc "#{command} unicorn server"
-    task command, roles: :app, except: {no_release: true} do
-      run "/etc/init.d/unicorn_#{application} #{command}"
-    end
-  end
-
-  task :setup_config, roles: :app do
-    sudo "ln -nfs #{current_path}/config/nginx.conf /etc/nginx/sites-enabled/#{application}"
-    sudo "ln -nfs #{current_path}/config/unicorn_init.sh /etc/init.d/unicorn_#{application}"
-    run "mkdir -p #{shared_path}/config"
-    put File.read("config/database.example.yml"), "#{shared_path}/config/database.yml"
-    puts "Now edit the config files in #{shared_path}."
-  end
-  after "deploy:setup", "deploy:setup_config"
-
-  task :symlink_config, roles: :app do
-    run "ln -nfs #{shared_path}/config/database.yml #{release_path}/config/database.yml"
-  end
-  after "deploy:finalize_update", "deploy:symlink_config"
-
-  desc "Make sure local git is in sync with remote."
-  task :check_revision, roles: :web do
-    unless `git rev-parse HEAD` == `git rev-parse origin/master`
-      puts "WARNING: HEAD is not the same as origin/master"
-      puts "Run `git push` to sync changes."
-      exit
-    end
-  end
-  before "deploy", "deploy:check_revision"
+  # make sure we're deploying what we think we're deploying
+  before :deploy, "deploy:check_revision"
+  # only allow a deploy with passing tests to deployed
+  before :deploy, "deploy:run_tests"
+  # compile assets locally then rsync
+  after 'deploy:symlink:shared', 'deploy:compile_assets_locally'
+  after :finishing, 'deploy:cleanup'
 end

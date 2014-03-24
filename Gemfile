@@ -41,7 +41,19 @@ gem 'unicorn'
 
 group :development do
   # gem 'sqlite3'
-  gem 'capistrano', "~> 2.15.5"
+#for capistrano 2.15.5:
+  # gem 'capistrano', "~> 2.15.5"
+
+#for capistrano 3:
+  gem 'capistrano', '~> 3.0.1', require: false
+  # rails specific capistrano funcitons
+	gem 'capistrano-rails', '~> 1.1.0', require: false
+	# integrate bundler with capistrano
+	gem 'capistrano-bundler', require: false
+	# if you are using RBENV
+	gem 'capistrano-rbenv', "~> 2.0", require: false 
+#end capistrano 3:
+
 end
 
 # Use debugger

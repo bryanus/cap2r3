@@ -19,4 +19,4 @@
 /config/database.yml
 
 #ignore ruby-version
-.ruby-version
+#.ruby-version
