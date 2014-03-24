@@ -1,6 +1,6 @@
 require "bundler/capistrano"
 
-server "54.193.91.250", :web, :app, :db, primary: true
+server "ec2deploy", :web, :app, :db, primary: true
 
 set :application, "cap2r3"
 set :user, "deployer" # The server's user for deploys
