@@ -2,7 +2,9 @@ namespace :deploy do
   desc 'Restart unicorn application'
   task :restart do
     on roles(:app), in: :sequence, wait: 5 do
-      sudo "/etc/init.d/unicorn_#{fetch(:full_app_name)} restart"
+      #sudo "/etc/init.d/unicorn_#{fetch(:full_app_name)} restart"
+      #this is somehow breaking on creating the correct full_app_name, resulintg in unicorn_
+      sudo "/etc/init.d/unicorn_ restart"
     end
   end
 end
