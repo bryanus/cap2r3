@@ -1,5 +1,5 @@
 set :application, 'cap2r3'
-set :deploy_user, 'deployer'
+set :deploy_user, 'mr_deploy'
 
 # setup repo details
 set :scm, :git
@@ -10,7 +10,7 @@ set :rbenv_type, :system
 set :rbenv_ruby, '2.1.1' #must match ruby version of server environment
 
 #I had to set rbenv_path manually or would never find the ruby verison path on server. why?
-set :rbenv_path, '/home/deployer/.rbenv'
+# set :rbenv_path, '/home/mr_deploy/.rbenv'
 set :rbenv_prefix, "RBENV_ROOT=#{fetch(:rbenv_path)} RBENV_VERSION=#{fetch(:rbenv_ruby)} #{fetch(:rbenv_path)}/bin/rbenv exec"
 
 set :pty, true
@@ -34,12 +34,23 @@ set :tests, ["spec"]
 # which config files should be copied by deploy:setup_config
 # see documentation in lib/capistrano/tasks/setup_config.cap
 # for details of operations
+
+#orig:
+# set(:config_files, %w(
+#   nginx.conf
+#   application.yml
+#   database.example.yml
+#   log_rotation
+#   monit
+#   unicorn.rb
+#   unicorn_init.sh
+# ))
+
+#modified
 set(:config_files, %w(
   nginx.conf
-  application.yml
   database.example.yml
   log_rotation
-  monit
   unicorn.rb
   unicorn_init.sh
 ))

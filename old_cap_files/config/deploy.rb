@@ -3,7 +3,7 @@ require "bundler/capistrano"
 server "ec2deploy", :web, :app, :db, primary: true
 
 set :application, "cap2r3"
-set :user, "deployer" # The server's user for deploys
+set :user, "mr_deploy" # The server's user for deploys
 set :deploy_to, "/home/#{user}/apps/#{application}"
 set :deploy_via, :remote_cache
 set :use_sudo, false
